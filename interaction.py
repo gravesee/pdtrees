@@ -4,11 +4,32 @@ from pandas import Series, DataFrame
 
 # Interaction class
 # Class describing relationship between independent and dependet variable
+class Split(object):
+    """Class to hold information about a split"""
+    val  = None
+    pos  = None
+    iv   = None
+    def __init__(self, name):    
+        self.name = name
 
-class Interaction():
-    """Interaction between two variables"""
+    def has_split(self):
+        return True if self.val is not None else False
+
+    def get_split(self):
+        return (self.name, self.val, self.pos, self.iv)
+
+
+class Interaction(object):
+    """
+    Object describing the relationship between an independent and Dependent
+    variable.  
+
+    Parameters
+    ----------
+    x : Independent variable of type Series and dtype numeric
+    y : Dependent target variable {0,1}
+    """
     def __init__(self, x, y):
-
         #Check that y is set([0,1])
         if not (set(y) == set([0,1])):
             print "y var is not a numeric, 0/1 variable!"
@@ -29,15 +50,14 @@ class Interaction():
         self.df = self.__agg(df)
 
         #Check that x has more than 1 value
-        print "Length of x-var: ", len(self.df.index)
         if (len(self.df.index) <= 1):
             raise TypeError("X has <= 1 levels")
 
-        df_stats = self.__generate_stats(self.df)
-        self.split_iv  = df_stats[0]
-        self.split_ct  = df_stats[1]
-        self.split_woe = df_stats[2]
-        self.tot_iv    = df_stats[3]
+        stats = self.__generate_stats(self.df)
+        self.split_iv  = stats[0]
+        self.split_ct  = stats[1]
+        self.split_woe = stats[2]
+        self.tot_iv    = stats[3]
 
     def __agg(self, df):
         """Groupby unique values of IV and get 0,1 counts"""
@@ -71,7 +91,10 @@ class Interaction():
 
         return (split_iv, split_ct, split_woe, tot_iv)
 
-    def get_best_split(self, mincnt=100, corr='none', verbose=False):
+    def split(self, mincnt=100, corr='none', verbose=False):
+        #Create Split instance to store and pass split info
+        split = Split(self.x.name)
+        
         #Specify minimum counts required for each child node
         adequate_cts = ((self.split_ct[0]>=mincnt) & 
                         (self.split_ct[1]>=mincnt))
@@ -93,20 +116,16 @@ class Interaction():
             self.print_summary()
         
         #Check if there are any candidates
-        if len(candidates)==0:
-            print "No viable candidates for splitting"
-            return None
-        else:
-            print "Split Candidates:\n", candidates
+        if len(candidates) > 0:
+            #store split information in Split instance
             split_pos = candidates.idxmax()
             split_val = self.original_index[split_pos]
 
-            res = dict(name = self.x.name,
-                       val  = split_val,
-                       pos  = split_pos,
-                       iv   = candidates[split_pos]
-                )
-            return res
+            split.val  = split_val
+            split.pos  = split_pos
+            split.iv   = candidates[split_pos]
+
+        return split
 
     def __collapse(self, df):
         """Collapse rows with zero entries"""

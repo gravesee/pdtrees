@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from interaction import Interaction
+from interaction import Interaction, Split
 from io import BytesIO
 from lxml import etree
 from lxml.etree import tostring
@@ -63,71 +63,56 @@ class DecisionTree():
 
         print "Start induce"
         #Find best splits for all attribtues
-        attr_splits = self.find_attr_splits(df,
-                                            self.attributes, self.target)
-
-        print "Split results:\n", attr_splits
+        splits = self.get_splits(df, self.attributes, self.target)
+        found_split = np.any([s.has_split() for s in splits])
 
         #Check if a split exists, if so find best and split df
-        if ((attr_splits == -1) | (attr_splits == dict())):
+        if (not found_split):
             print "Terminating recursion"
             node = etree.Element('leaf', s=side)
             parent.append(node)
             return
         else:
             #Find attribute that best splits the data
-            print "Find the best splitting attribute"
-            best_attr = self.find_best_attr(attr_splits)
-            var = best_attr['name']
-            val = best_attr['val']
-            iv  = best_attr['iv']
-            print "IV = ", iv
+            best_attr = self.get_max_split(splits)
+            name, val, pos, iv = best_attr.get_split()
+            
             #Create XML content
-            node = etree.Element('node', attr=var, val=unicode(val), side=side)
+            node = etree.Element('node', attr=name, val=unicode(val), side=side)
             parent.append(node)
 
+            print "Splitting on %s" % name
             left, right = self.split_df(df, best_attr)
-            print len(left), len(right)
             self.induce(left , parent=node, side='left')
             self.induce(right, parent=node, side='right')
 
 
-    def find_attr_splits(self, df, dict, y):
+    def get_splits(self, df, dict, y):
         """For list of attributes, find best split for each and return dict
            of results"""
-        res = {}
+        result = []
         #For each attribute find the split that maximizes IV
         for d in dict:
             #Unpack the dictionary:
-            attr = d['attr']
-            corr = d['corr']
-            mincnt = d['mincnt']
+            attr, corr, mincnt = (d['attr'], d['corr'], d['mincnt'])
 
-            print "Getting split for %s" % attr
             try:
+                print "Length of x: %s, y: %s" % (len(df[attr]), len(y))
                 i = Interaction(df[attr], y)
-                best_split = i.get_best_split(mincnt=mincnt, corr=corr, verbose=False)
-                if best_split == None:
-                    print "Split on %s returned None" % attr
-                else:
-                    res[attr] = best_split
+                split = i.split(mincnt, corr, verbose=False)
+                result.append(split)
             except TypeError:
                 pass
-        return res
+        return result
 
-    def find_best_attr(self, res):
+    def get_max_split(self, res):
         """Find best splitting attribute from dict of attribute splits"""
-        #res = {k:v for k,v in res.items() if v != None}
-        attr = max(res, key=lambda x: res[x]['iv'])
-        return res[attr]
+        attr = max(res, key=lambda split: split.iv)
+        return attr
 
-    def split_df(self, df, tup):
+    def split_df(self, df, split):
         """Split df on best attr and return left and right dfs"""
-        print "Splitting the df"
-        attr, val = tup['name'], tup['val']
-        print "Attribute: ", attr
-        print "Value: ", val
-        print "Splitting on %s at value %s" % (attr, val)
+        attr, val = split.name, split.val
         return df[df[attr]<=val], df[df[attr]>val]
 
 
