@@ -38,10 +38,19 @@ class Interaction(object):
         #Check that x is numeric
         if (x.dtype == 'object'):
             raise TypeError("x must be numeric, not object")
-            #TODO: raise exception
 
         #TODO: check that x and y are the same length
+        if (len(x) != len(y)):
+            print "Length of x and y must match"
+            print "len(x): %s  len(y): %s" % (len(x), len(y))
 
+        #Check that x and y are Series
+        if (not isinstance(x, Series)):
+            raise TypeError("x must be of type Series")
+
+        if (not isinstance(y, Series)):
+            raise TypeError("y must be of type Series")
+                
         self.x = x
         self.y = y
 
