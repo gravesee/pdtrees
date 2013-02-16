@@ -7,14 +7,30 @@ from lxml.etree import tostring
 from pandas import Series, DataFrame
 
 class Node(object):
-    node_type = 'root'
-    split_attr = None
-    split_val  = None
+    attr = None
+    val  = None
     side = None
+    mask = []
 
-    def __init__(self, parent, type):
+    def __init__(self, parent=None, type=None):
         self.parent = parent
-        pass
+        self.type = type
 
-#I HAVE MADE AN EDIT HERE!!!
-#I'm making another edit here!  I'll try to commit
+    def get_parent(self):
+        return self.parent
+
+    def translate(self):
+        s = {'left':'<=', 'right':'>'}
+        par = self.get_parent()
+
+        while not par.side == None:
+            # node info from parent
+            attr, val = (par.attr, par.val)
+            if self.type == 'leaf':
+                print "I am a leaf"
+            else:
+                sign = s.get(self.side, 'error')
+                print "%s %s %s" % (attr, sign, val)
+            return par.translate()
+
+

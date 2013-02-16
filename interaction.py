@@ -9,14 +9,14 @@ class Split(object):
     val  = None
     pos  = None
     iv   = None
-    def __init__(self, name):    
-        self.name = name
+    def __init__(self, attr):    
+        self.attr = attr
 
     def has_split(self):
         return True if self.val is not None else False
 
     def get_split(self):
-        return (self.name, self.val, self.pos, self.iv)
+        return (self.attr, self.val, self.pos, self.iv)
 
 
 class Interaction(object):
