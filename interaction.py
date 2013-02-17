@@ -9,6 +9,7 @@ class Split(object):
     val  = None
     pos  = None
     iv   = None
+    cnt  = None
     def __init__(self, attr):    
         self.attr = attr
 
@@ -32,7 +33,7 @@ class Interaction(object):
     def __init__(self, x, y):
         #Check that y is set([0,1])
         if not (set(y) == set([0,1])):
-            print "y var is not a numeric, 0/1 variable!"
+            raise TypeError("y var is not a numeric, 0/1 variable!")
             #TODO: raise exception
 
         #Check that x is numeric
@@ -53,6 +54,9 @@ class Interaction(object):
                 
         self.x = x
         self.y = y
+        self.cnt = len(x)
+
+        # print "Size of interaction: %s" % self.cnt
 
         #DataFrame of var x and response y
         df = pd.DataFrame({x.name:x, y.name:y})
@@ -159,6 +163,7 @@ class Interaction(object):
         print 'Independent Variable ..... %s' % self.x.name
         print 'Dependent Variable ....... %s' % self.y.name
         print 'Interaction IV ........... %.2f' % self.tot_iv
+        print 'Record Count ............. %.0f' % self.cnt
 
         self.print_list(self.split_woe, "WoE")
         self.print_list(self.split_ct , "Counts")
@@ -188,9 +193,3 @@ class Interaction(object):
         woe = colpct.apply(lambda x: np.log(x[0]/x[1]), axis=1)
         iv  = (woe*(colpct[0] - colpct[1])).sum()
         return iv
-
-# TESTING
-test = pd.read_csv("breast-cancer-wisconsin.data.txt", header=None, names=['v'+str(i) for i in range(11)])
-test['y'] = test['v10'].map({2:0,4:1})
-ivs = ['v'+str(i+1) for i in range(9)]
-test['v11'] = range(len(test))
