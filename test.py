@@ -19,7 +19,7 @@ import pandas as pd
 # Make some test Data
 test = pd.read_csv("breast-cancer-wisconsin.data.txt", header=None, names=['v'+str(i) for i in range(11)])
 # Stress test
-# test = pd.concat([test for i in range(2000)], ignore_index=True)
+# test = pd.concat([test for i in range(200)], ignore_index=True)
 test['y'] = test['v10'].map({2:0,4:1})
 ivs = ['v'+str(i+1) for i in range(9)]
 test['v11'] = range(len(test))
@@ -27,7 +27,7 @@ ivs.append('v11')
 
 vars = [{'attr':'v1', 'corr':'pos', 'mincnt':50},
         {'attr':'v2', 'corr':'pos', 'mincnt':50},
-        {'attr':'v3', 'corr':'pos', 'mincnt':50},
+        {'attr':'v2', 'corr':'pos', 'mincnt':50},
         {'attr':'v4', 'corr':'pos', 'mincnt':50},
         {'attr':'v5', 'corr':'pos', 'mincnt':50},
         {'attr':'v7', 'corr':'pos', 'mincnt':50},
@@ -36,6 +36,7 @@ vars = [{'attr':'v1', 'corr':'pos', 'mincnt':50},
 
 d = DecisionTree(test, vars, 'y')
 d.induce()
+s = d.calc_support()
 d.print_tree()
 # l = d.leaves
 # for leaf in l:

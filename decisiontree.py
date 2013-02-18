@@ -1,20 +1,17 @@
-import pandas as pd
+import pprint
 import numpy as np
-from interaction import Interaction, Split
-from lxml import etree
-from lxml.etree import tostring
-from pandas import Series, DataFrame
+from interaction import Interaction
 from node import Node
 
 class DecisionTree(object):
     """Decision tree class"""
-
     def __init__(self, df, attributes, target):
         self.df = df
         self.attributes = attributes
         self.target = target
         self.__root = Node(type='root')
-        self.__leaves = []
+        self.leaves = []
+        self.support = None
     
     #Test program
     def induce(self, df=None, parent=None, side='root', depth=0):
@@ -25,25 +22,24 @@ class DecisionTree(object):
         if parent is None:
             parent = self.__root
 
-        print "Start induce"
-        #Find best splits for all attribtues
+        # create base node
+        node = Node(parent, depth=depth, cnt=len(df))
+        
+        # find best splits for all attribtues
         splits = self.get_splits(df, self.attributes, self.target)
 
-        #Check if a split exists, if so find best and split df
+        # check if a split exists, if so find best and split df
         found_split = np.any([s.has_split() for s in splits])
-        if ((not found_split) | (depth >= 5)):
-            print "Terminating recursion"
-            node = Node(parent, type='leaf', depth=depth)
-            node.side = side
-            self.__leaves.append(node)
+        if ((not found_split) | (depth >= 2)):
+            node.type, node.side = ('leaf', side)
+            self.leaves.append(node)
             return
         else:            
-            #Find attribute that best splits the data
+            # find attribute that best splits the data
             best_attr = self.get_max_split(splits)
             attr, val, pos, iv = best_attr.get_split()
 
-            node = Node(parent, type='node', depth=depth)
-            node.attr, node.val, node.side = (attr, val, side)
+            node.type, node.attr, node.val, node.side = ('node', attr, val, side)
 
             print "Splitting on %s" % attr
             left, right = self.split_df(df, best_attr)
@@ -79,6 +75,26 @@ class DecisionTree(object):
         return df[df[attr]<=val], df[df[attr]>val]
 
     def print_tree(self):
-        for n, leaf in enumerate(self.__leaves):
-            leaf.translate()
-            print "\nthen tree = %s" % n
+        for branch, leaf in enumerate(self.leaves):
+            # for par in leaf.lineage:
+            #     print "branch: %s par: %s" % (n, par.attr)
+            leaf.translate(branch)
+            # print "\nthen tree = %s\n" % n
+
+    def calc_support(self):
+        """function that calculates percent contribution of each attribute
+           to branch.  Returns a dict of attributes for each branch"""
+        pp = pprint.PrettyPrinter()
+
+        support = []
+        for branch, leaf in enumerate(self.leaves):
+            support.append({})
+            counts = np.array([n.cnt for n in leaf.lineage], dtype='float')[1:]
+            total = sum(counts)
+            for node in leaf.lineage[1:]:
+                if node.type != 'root':
+                    support[branch][node.parent.attr] = node.cnt / total
+            print "Counts %s" % counts
+        print "Calculating support:"
+        pp.pprint(support)
+        self.support = support

@@ -9,7 +9,6 @@ class Split(object):
     val  = None
     pos  = None
     iv   = None
-    cnt  = None
     def __init__(self, attr):    
         self.attr = attr
 

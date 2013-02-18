@@ -1,46 +1,58 @@
-import pandas as pd
 import numpy as np
-from interaction import Interaction, Split
-from io import BytesIO
-from lxml import etree
-from lxml.etree import tostring
-from pandas import Series, DataFrame
+# TODO: separate printing and lineage functions
 
 class Node(object):
-    attr  = None
-    val   = None
-    side  = None
-
-    def __init__(self, parent=None, type=None, depth=0):
+    def __init__(self, parent=None, type=None, depth=0, cnt=0):
         self.parent = parent
-        self.type = type
-        self.depth = depth
+        self.type   = type
+        self.depth  = depth
+        self.attr   = None
+        self.val    = None
+        self.side   = None
+        self.cnt    = cnt
+        self.lineage = [self]
+        self.get_lineage()
 
     def get_parent(self):
         return self.parent
 
-    def translate(self):
+    def get_lineage(self):
+        if self.parent == None:
+            return
+        parent = self.parent
+        while parent.attr != None:
+            self.lineage.append(parent)
+            parent = parent.parent
+        self.lineage.reverse()
+
+    def print_node(self):
         s = {'left':'<=', 'right':'>'}
-        par = self.get_parent()
+        if self.side == 'root':
+            return "if "
 
-        if self.type == 'leaf':
-            print "\nif"
+        attr = self.parent.attr
+        val  = self.parent.val
+        sign = s.get(self.side, 'error')
+        
+        p1 = "%s".ljust(10) % attr
+        p2 = "%s".ljust(3)  % sign
+        p3 = "%s".rjust(15-len(sign)) % val
+        # p4 = "  Support: %.3f" % self.support
 
-        # terminate recurions if parent node is root
-        while par.attr != None:
-            # node info from parent
-            attr, val = (par.attr, par.val)
-            sign = s.get(self.side, 'error')
+        return (p1 + p2 + p3)
 
-            p1 = "%s".ljust(10) % attr
-            p2 = "%s".ljust(3)  % sign
-            p3 = "%s".rjust(15-len(sign)) % val
+    def translate(self, value):
+        num_ancestors = len(self.lineage)
 
-            print(p1 + p2 + p3),
+        for n, ancestor in enumerate(self.lineage):
+            text = ancestor.print_node()
+            if n == 0:
+                print(text),
+            elif n == 1:
+                print text               
+            elif n < num_ancestors:
+                print "and "+text
+            else:
+                print "   "+text
 
-            if (self.depth > 1):
-                print "and"
-
-            return par.translate()
-
-
+        print "then branch = %i" % value
