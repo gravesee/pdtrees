@@ -1,5 +1,5 @@
 import numpy as np
-# TODO: separate printing and lineage functions
+# TODO: Done -- separate printing and lineage functions
 
 class Node(object):
     def __init__(self, parent=None, type=None, depth=0, cnt=0):
@@ -17,6 +17,8 @@ class Node(object):
         return self.parent
 
     def get_lineage(self):
+        """get all ancestors of node including self and return list.
+           Reverse the list so order is root --> self"""
         if self.parent == None:
             return
         parent = self.parent
@@ -26,6 +28,7 @@ class Node(object):
         self.lineage.reverse()
 
     def print_node(self):
+        """print node in SAS formatting style"""
         s = {'left':'<=', 'right':'>'}
         if self.side == 'root':
             return "if "
@@ -42,6 +45,7 @@ class Node(object):
         return (p1 + p2 + p3)
 
     def translate(self, value):
+        """print entire rule in SAS formatting style"""
         num_ancestors = len(self.lineage)
 
         for n, ancestor in enumerate(self.lineage):

@@ -88,13 +88,13 @@ class DecisionTree(object):
 
         support = []
         for branch, leaf in enumerate(self.leaves):
+            lineage = leaf.lineage[1:]
             support.append({})
-            counts = np.array([n.cnt for n in leaf.lineage], dtype='float')[1:]
-            total = sum(counts)
-            for node in leaf.lineage[1:]:
+            cnts = [n.cnt for n in lineage]
+            sumcnts = float(sum(cnts))
+            for node in lineage:
                 if node.type != 'root':
-                    support[branch][node.parent.attr] = node.cnt / total
-            print "Counts %s" % counts
+                    support[branch][node.parent.attr] = node.cnt / sumcnts
         print "Calculating support:"
         pp.pprint(support)
         self.support = support

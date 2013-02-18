@@ -4,7 +4,7 @@ import pandas as pd
 
 #TODO LIST:
 
-# Add support information to node class
+# Done -- Add support information to node class
 # Abstract the splitting criteria in Interaction class
 #    pass a function(s) to Interaction.split instead of hard-coded to IV
 # Add support for discrete attributes
