@@ -27,6 +27,41 @@ class Node(object):
             parent = parent.parent
         self.lineage.reverse()
 
+    def get_branch(self, maxdepth):
+        """Calculate branch number based on left, right splits"""
+        val = {'left':0, 'right':1}
+        tmp = [n for n in range(maxdepth)]
+        tmp.reverse()
+        divs = [2**i for i in tmp]
+
+        lineage = self.lineage[1:]
+        splits = [val[node.side] for n, node in enumerate(lineage)]
+
+        tpl = zip(divs, splits)
+        branch = sum([reduce(lambda x,y: x*y, tp) for tp in tpl])
+        return branch
+
+    def calc_support(self):
+        support = {}
+            
+        # get lineage of each leaf node except for the root
+        lineage = self.lineage[1:]
+        
+        # calculate diff counts between nodes in lineage
+        cnts = np.array([n.cnt for n in lineage], dtype='float')
+        diff = np.append((cnts[:-1] - cnts[1:]), cnts[-1])
+        btot = sum(diff)
+        
+        # calculate support at each node except the root
+        for n, node in enumerate(lineage):
+            attr = node.parent.attr
+            if attr in support:
+                support[attr] += diff[n] / btot
+            elif attr != None:
+                support[attr] =  diff[n] / btot
+
+        return support
+
     def print_node(self):
         """print node in SAS formatting style"""
         s = {'left':'<=', 'right':'>'}
@@ -44,7 +79,7 @@ class Node(object):
 
         return (p1 + p2 + p3)
 
-    def translate(self, value):
+    def translate(self, branch):
         """print entire rule in SAS formatting style"""
         num_ancestors = len(self.lineage)
 
@@ -59,4 +94,4 @@ class Node(object):
             else:
                 print "   "+text
 
-        print "then branch = %i" % value
+        print "then branch = %s" % branch

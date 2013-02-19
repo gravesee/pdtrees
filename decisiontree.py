@@ -12,6 +12,8 @@ class DecisionTree(object):
         self.__root = Node(type='root')
         self.leaves = []
         self.support = None
+        self.maxdepth = 3
+        self.tree = {}
     
     #Test program
     def induce(self, df=None, parent=None, side='root', depth=0):
@@ -30,7 +32,7 @@ class DecisionTree(object):
 
         # check if a split exists, if so find best and split df
         found_split = np.any([s.has_split() for s in splits])
-        if ((not found_split) | (depth >= 2)):
+        if ((not found_split) | (depth >= self.maxdepth)):
             node.type, node.side = ('leaf', side)
             self.leaves.append(node)
             return
@@ -74,27 +76,48 @@ class DecisionTree(object):
         attr, val = split.attr, split.val
         return df[df[attr]<=val], df[df[attr]>val]
 
+    def build_tree(self):
+        # induce the decision tree
+        self.induce()
+        
+        # fill out dict with leaf nodes and branch ids
+        for leaf in self.leaves:
+            branch = leaf.get_branch(self.maxdepth)
+            self.tree[branch] = {'leaf'   :leaf,
+                                 'support':leaf.calc_support()}
+
     def print_tree(self):
-        for branch, leaf in enumerate(self.leaves):
-            # for par in leaf.lineage:
-            #     print "branch: %s par: %s" % (n, par.attr)
-            leaf.translate(branch)
-            # print "\nthen tree = %s\n" % n
+        branches = sorted(self.tree.keys())
 
-    def calc_support(self):
-        """function that calculates percent contribution of each attribute
-           to branch.  Returns a dict of attributes for each branch"""
-        pp = pprint.PrettyPrinter()
+        for branch in branches:
+            self.tree[branch]['leaf'].translate(branch)
+            # print leaf.get_branch(self.maxdepth)
 
-        support = []
-        for branch, leaf in enumerate(self.leaves):
-            lineage = leaf.lineage[1:]
-            support.append({})
-            cnts = [n.cnt for n in lineage]
-            sumcnts = float(sum(cnts))
-            for node in lineage:
-                if node.type != 'root':
-                    support[branch][node.parent.attr] = node.cnt / sumcnts
-        print "Calculating support:"
-        pp.pprint(support)
-        self.support = support
+    # def calc_support(self):
+    #     """function that calculates percent contribution of each attribute
+    #        in branch.  Returns a dict of attributes for each branch"""
+    #     pp = pprint.PrettyPrinter()
+
+    #     support = []
+    #     for branch, leaf in enumerate(self.leaves):
+    #         support.append({})
+            
+    #         # get lineage of each leaf node except for the root
+    #         lineage = leaf.lineage[1:]
+            
+    #         # calculate diff counts between nodes in lineage
+    #         cnts = np.array([n.cnt for n in lineage], dtype='float')
+    #         diff = np.append((cnts[:-1] - cnts[1:]), cnts[-1])            
+    #         btot = sum(diff)
+            
+    #         # calculate support at each node except the root
+    #         for n, node in enumerate(lineage):
+    #             attr = node.parent.attr
+    #             if attr in support[branch]:
+    #                 support[branch][attr] += diff[n] / btot
+    #             elif attr != None:
+    #                 support[branch][attr] =  diff[n] / btot
+
+    #     print "Calculating support:"
+    #     pp.pprint(support)
+    #     self.support = support
